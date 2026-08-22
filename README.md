@@ -78,7 +78,3 @@ any other page you visit.
 - Reddit's internal markup changes periodically; if thumbnails stop
   upgrading after a Reddit update, the CSS selectors/JSON field names in
   `content.js` likely need adjusting. Issues and PRs welcome.
-
-## License
-
-MIT — see [LICENSE](./LICENSE).
