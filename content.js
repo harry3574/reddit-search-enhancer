@@ -69,7 +69,6 @@ function applyStyleConfig() {
 
 const LOG_PREFIX = "[RedditSearchEnhancer]";
 const processed = new WeakSet();
-const inFlight = new Set();
 
 function isSearchPage() {
   const path = location.pathname;
@@ -127,11 +126,97 @@ function pickResolution(resolutions, sourceUrl) {
   return sourceUrl ? sourceUrl.replace(/&amp;/g, "&") : null;
 }
 
-async function fetchPostImages(permalink) {
-  const url = `${location.origin}${permalink}.json?raw_json=1`;
-  const res = await fetch(url, { credentials: "same-origin" });
-  if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-  const data = await res.json();
+// ---- Networking: throttled queue with 429 backoff ----
+// Reddit's .json endpoint rate-limits per-IP/session. Firing one fetch per
+// thumbnail the instant it appears (which is what a naive forEach does)
+// blows through that limit almost immediately on any search page with more
+// than a handful of results. This queue caps how many requests are in
+// flight at once, spaces out when new ones start, and — the important
+// part — actually reacts to a 429 by pausing the whole queue instead of
+// treating it like any other failure.
+const FETCH_CONCURRENCY = 2; // max simultaneous .json requests
+const MIN_GAP_MS = 350; // minimum spacing between starting new requests
+const MAX_RETRIES = 5;
+
+const imageCache = new Map(); // permalink -> Promise<string[]>
+const fetchQueue = []; // pending { permalink, resolve, reject, attempt }
+let activeFetches = 0;
+let lastFetchStart = 0;
+let backoffUntil = 0; // timestamp; queue stays paused until this passes
+
+function queueFetchPostImages(permalink) {
+  if (imageCache.has(permalink)) return imageCache.get(permalink);
+  const promise = new Promise((resolve, reject) => {
+    fetchQueue.push({ permalink, resolve, reject, attempt: 0 });
+  });
+  imageCache.set(permalink, promise);
+  pumpQueue();
+  return promise;
+}
+
+function pumpQueue() {
+  if (activeFetches >= FETCH_CONCURRENCY || !fetchQueue.length) return;
+
+  const now = Date.now();
+  const readyAt = Math.max(backoffUntil, lastFetchStart + MIN_GAP_MS);
+  if (now < readyAt) {
+    setTimeout(pumpQueue, readyAt - now);
+    return;
+  }
+
+  const task = fetchQueue.shift();
+  activeFetches++;
+  lastFetchStart = Date.now();
+
+  runFetchTask(task).finally(() => {
+    activeFetches--;
+    pumpQueue();
+  });
+
+  // Keep filling remaining concurrency slots, still respecting MIN_GAP_MS.
+  if (fetchQueue.length && activeFetches < FETCH_CONCURRENCY) {
+    setTimeout(pumpQueue, MIN_GAP_MS);
+  }
+}
+
+async function runFetchTask(task) {
+  const { permalink, resolve, reject } = task;
+  try {
+    const url = `${location.origin}${permalink}.json?raw_json=1`;
+    const res = await fetch(url, { credentials: "same-origin" });
+
+    if (res.status === 429) {
+      const retryAfterHeader = res.headers.get("Retry-After");
+      const retryAfterMs = retryAfterHeader ? Number(retryAfterHeader) * 1000 : null;
+      const backoffMs = retryAfterMs || Math.min(2000 * 2 ** task.attempt, 30000);
+      backoffUntil = Date.now() + backoffMs;
+
+      task.attempt++;
+      if (task.attempt > MAX_RETRIES) {
+        imageCache.delete(permalink);
+        reject(new Error("rate limited (429), giving up after retries"));
+        return;
+      }
+
+      console.log(
+        LOG_PREFIX,
+        `429 from Reddit, backing off ${backoffMs}ms (attempt ${task.attempt}/${MAX_RETRIES})`,
+        permalink
+      );
+      fetchQueue.unshift(task); // retry this one first once backoff clears
+      return;
+    }
+
+    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+    const data = await res.json();
+    resolve(extractImagesFromPostJson(data));
+  } catch (err) {
+    imageCache.delete(permalink); // don't poison the cache with a hard failure
+    reject(err);
+  }
+}
+
+function extractImagesFromPostJson(data) {
   const post = data?.[0]?.data?.children?.[0]?.data;
   if (!post) throw new Error("unexpected json shape");
 
@@ -243,12 +328,10 @@ async function upgradeThumb(img) {
   if (processed.has(img)) return;
   const permalink = findPermalinkForImage(img);
   if (!permalink) return;
-  if (inFlight.has(permalink)) return;
-  inFlight.add(permalink);
   processed.add(img);
 
   try {
-    const images = await fetchPostImages(permalink);
+    const images = await queueFetchPostImages(permalink);
     if (images.length) {
       const carousel = buildCarousel(images);
       img.style.display = "none";
@@ -260,8 +343,6 @@ async function upgradeThumb(img) {
     }
   } catch (err) {
     console.log(LOG_PREFIX, "failed for", permalink, err);
-  } finally {
-    inFlight.delete(permalink);
   }
 }
 
@@ -323,4 +404,3 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (styleRelevant) applyStyleConfig();
   scan();
 });
-
