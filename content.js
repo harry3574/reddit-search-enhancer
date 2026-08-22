@@ -326,6 +326,7 @@ function findPermalinkForImage(img) {
 
 async function upgradeThumb(img) {
   if (processed.has(img)) return;
+  if (!CONFIG.UPGRADE_IMAGES) return; // re-checked here so a mid-flight toggle-off is respected
   const permalink = findPermalinkForImage(img);
   if (!permalink) return;
   processed.add(img);
@@ -346,12 +347,36 @@ async function upgradeThumb(img) {
   }
 }
 
+// Only fetch thumbnails that are actually in (or about to scroll into) view.
+// A long search results page can have dozens of thumbnails; fetching all of
+// them the moment they appear in the DOM is most of what was driving the
+// 429s. ROOT_MARGIN extends the "in view" zone by roughly two or three
+// result rows above and below the viewport, so images are ready just before
+// they're scrolled to rather than fetching everything up front.
+const ROOT_MARGIN_PX = 600;
+
+const thumbObserver = new IntersectionObserver(
+  (entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      thumbObserver.unobserve(entry.target);
+      upgradeThumb(entry.target);
+    }
+  },
+  { root: null, rootMargin: `${ROOT_MARGIN_PX}px 0px`, threshold: 0 }
+);
+
 function scan() {
   if (!configReady) return;
   if (!CONFIG.UPGRADE_IMAGES) return;
   if (!isSearchPage()) return;
   const imgs = findThumbImages(document.body);
-  imgs.forEach(upgradeThumb);
+  for (const img of imgs) {
+    if (processed.has(img)) continue;
+    // observe() is a no-op if this element is already being observed, so
+    // re-scanning the same still-off-screen thumbnails costs nothing.
+    thumbObserver.observe(img);
+  }
 }
 
 function scheduleScan() {
@@ -370,6 +395,7 @@ let lastUrl = location.href;
 setInterval(() => {
   if (location.href !== lastUrl) {
     lastUrl = location.href;
+    thumbObserver.disconnect(); // drop refs to the old page's thumbnails
     setTimeout(scan, 500);
   }
 }, 500);
