@@ -9,6 +9,12 @@ This replaces those thumbnails with the actual full-size image, inline,
 right in the search results. Multi-image (gallery) posts get a small
 prev/next carousel instead of showing only the first image.
 
+## Before / after
+
+| Before | After |
+|---|---|
+| ![Reddit search results with tiny blurred thumbnails](./screenshots/before.png) | ![Same results with full-size images and a working gallery carousel](./screenshots/after.png) |
+
 ## Why this exists
 
 New Reddit's search results deliberately serve a separate, low-resolution
@@ -78,3 +84,7 @@ any other page you visit.
 - Reddit's internal markup changes periodically; if thumbnails stop
   upgrading after a Reddit update, the CSS selectors/JSON field names in
   `content.js` likely need adjusting. Issues and PRs welcome.
+
+## License
+
+License is GPLv3 — see [LICENSE](./LICENSE).
