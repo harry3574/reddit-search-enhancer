@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Reddit Search Enhancer</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <h1>Reddit Search Enhancer</h1>
+  <p class="hint">Changes apply immediately — reload any open Reddit search tab to see them.</p>
+
+  <label class="row">
+    <input type="checkbox" id="UPGRADE_IMAGES" />
+    <span>
+      <strong>Enable extension</strong>
+      <small>Master switch — turns everything below off too when disabled</small>
+    </span>
+  </label>
+
+  <hr />
+
+  <label class="row">
+    <input type="checkbox" id="REMOVE_IMAGE_BLUR" />
+    <span>
+      <strong>Remove blur</strong>
+      <small>Strip NSFW/spoiler blur from thumbnails</small>
+    </span>
+  </label>
+
+  <label class="row">
+    <input type="checkbox" id="REVEAL_SPOILER_TEXT" />
+    <span>
+      <strong>Reveal spoiler text</strong>
+      <small>Keep spoiler-tagged titles/text readable</small>
+    </span>
+  </label>
+
+  <label class="row">
+    <input type="checkbox" id="SHOW_GALLERY_CAROUSEL" />
+    <span>
+      <strong>Gallery carousel</strong>
+      <small>Prev/next browsing for multi-image posts</small>
+    </span>
+  </label>
+
+  <label class="row">
+    <input type="checkbox" id="REWORK_LAYOUT" />
+    <span>
+      <strong>Rework layout</strong>
+      <small>Widen the result row to fit a full-size image</small>
+    </span>
+  </label>
+
+  <hr />
+
+  <label class="row row-number">
+    <span>
+      <strong>Image width</strong>
+      <small>Lower = faster loading, smaller file size</small>
+    </span>
+    <select id="TARGET_WIDTH">
+      <option value="320">320px</option>
+      <option value="480">480px</option>
+      <option value="640">640px</option>
+      <option value="720">720px</option>
+      <option value="960">960px</option>
+      <option value="1080">1080px (original quality)</option>
+    </select>
+  </label>
+
+  <p class="status" id="status"></p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

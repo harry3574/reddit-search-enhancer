@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Reddit Search Enhancer",
+  "version": "1.0",
+  "description": "On Reddit search results pages, replaces small/blurred thumbnails with full-size images, browsable galleries, and readable spoiler text.",
+  "host_permissions": [
+    "*://*.reddit.com/*"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Reddit Search Enhancer"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.reddit.com/*"],
+      "css": ["styles.css"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
