@@ -49,11 +49,12 @@ Reddit tab itself picks the new settings up cleanly.
 | Option | Default | Effect |
 |---|---|---|
 | Enable extension | on | Master switch for the whole extension |
-| Remove blur | on | Strip Reddit's NSFW/spoiler blur |
-| Reveal spoiler text | on | Keep spoiler-tagged text readable |
-| Gallery carousel | on | Prev/next browsing for multi-image posts |
-| Rework layout | on | Widen the result row to fit a full-size image |
-| Image width | 720px | Preferred image width (lower = faster/smaller) |
+| Fetch full-size images | on | Loads the real image from Reddit's post data instead of the thumbnail — the heaviest option, network-wise, and kept separate so it can be turned off on its own |
+| Remove blur | on | Strip Reddit's NSFW/spoiler blur (CSS-only, works even with image fetching off) |
+| Reveal spoiler text | on | Keep spoiler-tagged text readable (CSS-only, works even with image fetching off) |
+| Gallery carousel | on | Prev/next browsing for multi-image posts — requires "Fetch full-size images" |
+| Rework layout | on | Widen the result row to fit a full-size image — requires "Fetch full-size images" |
+| Image width | 720px | Preferred image width (lower = faster/smaller) — only applies when "Fetch full-size images" is on |
 
 Settings are stored via `chrome.storage.local` (per-browser-profile, not
 synced anywhere). `DEFAULT_CONFIG` near the top of `content.js` is only
