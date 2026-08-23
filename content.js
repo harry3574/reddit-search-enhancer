@@ -8,6 +8,7 @@
 // setting has been saved.
 
 const DEFAULT_CONFIG = {
+  EXTENSION_ENABLED: true,
   UPGRADE_IMAGES: true,
   REMOVE_IMAGE_BLUR: true,
   REVEAL_SPOILER_TEXT: true,
@@ -32,7 +33,7 @@ function removeStyle(id) {
 }
 
 function applyStyleConfig() {
-  if (CONFIG.REMOVE_IMAGE_BLUR) {
+  if (CONFIG.EXTENSION_ENABLED && CONFIG.REMOVE_IMAGE_BLUR) {
     injectStyle(
       "rsi-blur-removal",
       `
@@ -50,7 +51,7 @@ function applyStyleConfig() {
     removeStyle("rsi-blur-removal");
   }
 
-  if (CONFIG.REVEAL_SPOILER_TEXT) {
+  if (CONFIG.EXTENSION_ENABLED && CONFIG.REVEAL_SPOILER_TEXT) {
     injectStyle(
       "rsi-spoiler-text",
       `
@@ -326,7 +327,7 @@ function findPermalinkForImage(img) {
 
 async function upgradeThumb(img) {
   if (processed.has(img)) return;
-  if (!CONFIG.UPGRADE_IMAGES) return; // re-checked here so a mid-flight toggle-off is respected
+  if (!CONFIG.EXTENSION_ENABLED || !CONFIG.UPGRADE_IMAGES) return; // re-checked here so a mid-flight toggle-off is respected
   const permalink = findPermalinkForImage(img);
   if (!permalink) return;
   processed.add(img);
@@ -368,7 +369,7 @@ const thumbObserver = new IntersectionObserver(
 
 function scan() {
   if (!configReady) return;
-  if (!CONFIG.UPGRADE_IMAGES) return;
+  if (!CONFIG.EXTENSION_ENABLED || !CONFIG.UPGRADE_IMAGES) return;
   if (!isSearchPage()) return;
   const imgs = findThumbImages(document.body);
   for (const img of imgs) {
@@ -422,7 +423,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   for (const key in changes) {
     if (key in CONFIG) {
       CONFIG[key] = changes[key].newValue;
-      if (key === "REMOVE_IMAGE_BLUR" || key === "REVEAL_SPOILER_TEXT") {
+      if (key === "EXTENSION_ENABLED" || key === "REMOVE_IMAGE_BLUR" || key === "REVEAL_SPOILER_TEXT") {
         styleRelevant = true;
       }
     }
