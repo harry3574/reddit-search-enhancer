@@ -10,10 +10,20 @@
   <p class="hint">Changes apply immediately — reload any open Reddit search tab to see them.</p>
 
   <label class="row">
-    <input type="checkbox" id="UPGRADE_IMAGES" />
+    <input type="checkbox" id="EXTENSION_ENABLED" />
     <span>
       <strong>Enable extension</strong>
       <small>Master switch — turns everything below off too when disabled</small>
+    </span>
+  </label>
+
+  <hr />
+
+  <label class="row">
+    <input type="checkbox" id="UPGRADE_IMAGES" />
+    <span>
+      <strong>Fetch full-size images</strong>
+      <small>Loads the real image from Reddit's post data instead of the thumbnail — heavier network use, so it's kept separate from the lighter options below</small>
     </span>
   </label>
 
@@ -39,7 +49,7 @@
     <input type="checkbox" id="SHOW_GALLERY_CAROUSEL" />
     <span>
       <strong>Gallery carousel</strong>
-      <small>Prev/next browsing for multi-image posts</small>
+      <small>Prev/next browsing for multi-image posts — requires "Fetch full-size images"</small>
     </span>
   </label>
 
@@ -47,7 +57,7 @@
     <input type="checkbox" id="REWORK_LAYOUT" />
     <span>
       <strong>Rework layout</strong>
-      <small>Widen the result row to fit a full-size image</small>
+      <small>Widen the result row to fit a full-size image — requires "Fetch full-size images"</small>
     </span>
   </label>
 
